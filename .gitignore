@@ -1,4 +1,6 @@
 .env
+.env.*
+!.env.example
 __pycache__/
 *.pyc
 .venv/
@@ -8,3 +10,8 @@ backend/.venv-local/
 node_modules/
 dist/
 .vite/
+# Local diagnostics and accidental shell artifacts.
+/tmp/
+/cd
+/python
+/package-lock.json

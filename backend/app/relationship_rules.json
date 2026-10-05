@@ -1,0 +1,194 @@
+[
+  {
+    "id": "calls",
+    "type": "CALLED",
+    "sourceTypes": [
+      "Phone",
+      "Person",
+      "Organization"
+    ],
+    "targetTypes": [
+      "Phone",
+      "Person",
+      "Organization"
+    ],
+    "pattern": "\\s+(?:(?:repeatedly|immediately|also|then|later|frequently)\\s+)?(?:called|calls|dialled|dialed|phoned|spoke\\s+(?:to|with)|placed\\s+a\\s+call\\s+to)\\s+(?:the\\s+)?(?:phone\\s*(?:number|no\\.?)?\\s*[:#-]?\\s*)?"
+  },
+  {
+    "id": "transfers",
+    "type": "TRANSFERRED_TO",
+    "sourceTypes": [
+      "Account",
+      "Person",
+      "Organization"
+    ],
+    "targetTypes": [
+      "Account",
+      "Person",
+      "Organization"
+    ],
+    "pattern": "\\s+(?:(?:transferred|transfers|sent|paid|wired|remitted|deposited)\\s+(?:(?:an?\\s+)?(?:amount|sum)\\s+of\\s+)?(?:(?P<currency>INR|Rs\\.?|Ã¢â€šÂ¹|USD|\\$)\\s*(?P<amount>\\d[\\d,]*(?:\\.\\d{1,2})?)\\s+)?(?:via\\s+(?:UPI|NEFT|RTGS|IMPS|cash|bank|wire)\\s+)?to\\s+(?:the\\s+)?(?:(?:account|a/c)\\s*[:#-]?\\s*)?)"
+  },
+  {
+    "id": "asset-use",
+    "type": "USES",
+    "sourceTypes": [
+      "Person",
+      "Organization"
+    ],
+    "targetTypes": [
+      "Phone",
+      "Vehicle",
+      "Account",
+      "IMEI"
+    ],
+    "pattern": "\\s+(?:(?:was|is|were)\\s+)?(?:seen\\s+)?(?:used|uses|using|drove|drives|driving|operated|operates|operating|handled|handles)\\s+(?:the\\s+)?(?:mobile\\s+|telephone\\s+)?(?:(?:phone|vehicle|account|a/c|IMEI)(?:\\s+(?:number|no\\.?))?\\s*[:#-]?\\s*)?"
+  },
+  {
+    "id": "asset-ownership",
+    "type": "OWNS",
+    "sourceTypes": [
+      "Person",
+      "Organization"
+    ],
+    "targetTypes": [
+      "Phone",
+      "Vehicle",
+      "Account",
+      "IMEI"
+    ],
+    "pattern": "\\s+(?:owns|owned|possesses|possessed|purchased|bought|is\\s+the\\s+owner\\s+of)\\s+(?:the\\s+)?(?:(?:phone|vehicle|account|a/c|IMEI)(?:\\s+(?:number|no\\.?))?\\s*[:#-]?\\s*)?"
+  },
+  {
+    "id": "registration",
+    "type": "REGISTERED_TO",
+    "sourceTypes": [
+      "Phone",
+      "Vehicle",
+      "Account",
+      "IMEI"
+    ],
+    "targetTypes": [
+      "Person",
+      "Organization"
+    ],
+    "pattern": "\\s+(?:(?:is|was)\\s+)?registered\\s+(?:to|in\\s+the\\s+name\\s+of|under)\\s+"
+  },
+  {
+    "id": "contact",
+    "type": "CONTACTED",
+    "sourceTypes": "*",
+    "targetTypes": "*",
+    "pattern": "\\s+(?:(?:immediately|also|frequently|then)\\s+)?(?:contacted|contacts|communicated\\s+with|messaged|texted|sent\\s+(?:a\\s+)?message\\s+to|chatted\\s+with)\\s+"
+  },
+  {
+    "id": "association",
+    "type": "ASSOCIATED_WITH",
+    "sourceTypes": "*",
+    "targetTypes": "*",
+    "pattern": "\\s+(?:(?:is|was|were|are)\\s+)?(?:associated|connected|linked|conspired|partnered|colluded)\\s+(?:with|to)\\s+"
+  },
+  {
+    "id": "employment",
+    "type": "WORKS_FOR",
+    "sourceTypes": [
+      "Person"
+    ],
+    "targetTypes": [
+      "Organization",
+      "Person"
+    ],
+    "pattern": "\\s+(?:(?:is|was)\\s+)?(?:works|worked|employed\\s+(?:by|at)|working\\s+for|works\\s+at)\\s+"
+  },
+  {
+    "id": "membership",
+    "type": "MEMBER_OF",
+    "sourceTypes": [
+      "Person",
+      "Organization"
+    ],
+    "targetTypes": [
+      "Organization"
+    ],
+    "pattern": "\\s+(?:(?:is|was)\\s+)?(?:a\\s+)?(?:member|part|affiliate|operative)\\s+of\\s+"
+  },
+  {
+    "id": "residence",
+    "type": "RESIDES_IN",
+    "sourceTypes": [
+      "Person"
+    ],
+    "targetTypes": [
+      "Location"
+    ],
+    "pattern": "\\s+(?:(?:is|was)\\s+(?:a\\s+)?(?:resident|native)\\s+of|(?:lives|lived|resides|resided|staying|stayed)\\s+(?:in|at))\\s+",
+    "allowEmbedded": true
+  },
+  {
+    "id": "location",
+    "type": "LOCATED_IN",
+    "sourceTypes": "*",
+    "targetTypes": [
+      "Location"
+    ],
+    "pattern": "\\s+(?:(?:is|was|were|are)\\s+)?(?:located|based|situated|headquartered|operating\\s+from)\\s+(?:in|at)\\s+"
+  },
+  {
+    "id": "parentage",
+    "type": "CHILD_OF",
+    "sourceTypes": [
+      "Person"
+    ],
+    "targetTypes": [
+      "Person"
+    ],
+    "pattern": "\\s*,?\\s*(?:(?:is|was)\\s+)?(?:the\\s+)?(?:(?:son|daughter|child)\\s+of|s\\s*/\\s*o|d\\s*/\\s*o)\\s+",
+    "allowEmbedded": true
+  },
+  {
+    "id": "siblings",
+    "type": "SIBLING_OF",
+    "sourceTypes": [
+      "Person"
+    ],
+    "targetTypes": [
+      "Person"
+    ],
+    "pattern": "\\s+(?:(?:is|was)\\s+)?(?:the\\s+)?(?:brother|sister|sibling)\\s+of\\s+",
+    "allowEmbedded": true
+  },
+  {
+    "id": "spouse",
+    "type": "SPOUSE_OF",
+    "sourceTypes": [
+      "Person"
+    ],
+    "targetTypes": [
+      "Person"
+    ],
+    "pattern": "\\s+(?:(?:is|was)\\s+)?(?:the\\s+)?(?:(?:wife|husband|spouse)\\s+of|w\\s*/\\s*o)\\s+",
+    "allowEmbedded": true
+  },
+  {
+    "id": "posting",
+    "type": "POSTED_AT",
+    "sourceTypes": [
+      "Person",
+      "Organization"
+    ],
+    "targetTypes": [
+      "Organization",
+      "Location"
+    ],
+    "allowEmbedded": true,
+    "pattern": "\\s+(?:(?:is|was)\\s+)?(?:posted|stationed|assigned)\\s+(?:at|to)\\s+"
+  },
+  {
+    "id": "meeting",
+    "type": "MET",
+    "sourceTypes": "*",
+    "targetTypes": "*",
+    "pattern": "\\s+(?:met|meets|meeting)(?:\\s+with)?\\s+"
+  }
+]
+

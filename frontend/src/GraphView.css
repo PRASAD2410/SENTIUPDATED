@@ -1,0 +1,7 @@
+.graph-page .graph-toolbar{flex-wrap:wrap}
+.graph-page .graph-caption{top:16px;left:18px;padding:11px 14px;max-width:calc(100% - 90px);font-size:10px;line-height:1.6;letter-spacing:.4px;background:var(--panel);border:1px solid var(--border);border-radius:5px;box-shadow:var(--shadow);opacity:.96;overflow-wrap:anywhere}
+.graph-page .graph-caption>span{text-transform:uppercase}
+.graph-page .graph-view-note,.graph-page .isolated-note{font-family:Arial,sans-serif;font-size:12px;line-height:1.6;letter-spacing:0;margin-top:6px;max-width:470px;color:var(--muted)}
+.graph-page .zoom-controls span{font-size:10px;width:43px}
+.graph-page .zoom-controls button{width:43px}
+@media(max-width:600px){.graph-page .graph-caption{font-size:9px;left:12px;padding:9px 11px}.graph-page .graph-view-note,.graph-page .isolated-note{font-size:11px}}

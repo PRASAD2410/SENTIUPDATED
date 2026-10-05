@@ -1,0 +1,21 @@
+.source-drop-zone{margin-top:22px;padding:24px;border:1px dashed var(--border);border-radius:5px;background:var(--input);display:flex;flex-direction:column;align-items:center;gap:9px;text-align:center}
+.source-drop-zone>svg{color:var(--blue)}
+.source-drop-zone>strong{font-size:14px}
+.source-drop-zone.dragging{border-color:var(--blue);background:var(--soft)}
+.source-picker-actions{display:flex;align-items:flex-end;gap:14px;margin-top:5px}
+.source-picker-actions label{text-align:left}
+.source-picker-actions select{display:block;min-width:170px;padding:8px;margin-top:6px;font-size:11px}
+.source-upload-queue .source-queue-heading{margin-bottom:12px}
+.source-queue-heading>.eyebrow{margin:0}
+.source-upload-queue .source-queue-row{display:flex;gap:12px;align-items:center;padding:14px 0;border-top:1px solid var(--border)}
+.source-queue-file{flex:1;min-width:0}
+.source-queue-file strong{display:block;font-size:12px;overflow-wrap:anywhere}
+.source-queue-file small{display:block;color:var(--muted);font-size:10px;margin:5px 0}
+.source-queue-status{display:flex;align-items:center;gap:5px;font-size:11px;line-height:1.5}
+.source-queue-row>select{width:165px;padding:8px;font-size:10px;flex-shrink:0}
+.source-file-error{font-size:11px;color:#b83e48;margin-top:6px;overflow-wrap:anywhere}
+.source-batch-actions{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.source-batch-progress{display:flex;align-items:center;gap:12px;margin-top:15px;font-size:11px;color:var(--muted)}
+.source-batch-progress progress{width:160px;height:7px;accent-color:var(--blue);flex-shrink:0}
+.source-result-filename{padding-top:13px;overflow-wrap:anywhere}
+@media(max-width:600px){.source-drop-zone{padding:18px 12px}.source-picker-actions{flex-wrap:wrap;justify-content:center}.source-upload-queue .source-queue-row{flex-wrap:wrap;gap:8px}.source-queue-file{flex-basis:calc(100% - 70px)}.source-queue-row>select{width:calc(100% - 46px);margin-left:26px}.source-queue-heading{flex-wrap:wrap}.source-batch-progress{align-items:flex-start;flex-direction:column}.source-batch-progress progress{width:100%}}
