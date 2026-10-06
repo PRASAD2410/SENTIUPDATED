@@ -64,6 +64,33 @@ function NewCase({close, created}) {
   );
 }
 
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, info) {
+    console.error('View render error:', error, info);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="panel" style={{ margin: '2rem', padding: '2rem', textAlign: 'center' }}>
+          <h3>Unable to display this view</h3>
+          <p className="muted small" style={{ margin: '1rem 0' }}>{this.state.error?.message || 'An unexpected rendering error occurred.'}</p>
+          <button className="primary" onClick={() => { this.setState({ hasError: false, error: null }); if (this.props.onRetry) this.props.onRetry(); }}>
+            RELOAD VIEW
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function App() {
   const [theme, setTheme] = useState(() => readSetting('sg-theme', 'light'));
   const [entered, setEntered] = useState(() => Boolean(readSetting('sg-auth-session', '')));
@@ -131,9 +158,10 @@ export default function App() {
         setCases([]);
       }
       if (w.status === 'fulfilled') {
-        setData(w.value);
+        setData(w.value ? { ...EMPTY, ...w.value, network: { ...EMPTY.network, ...(w.value.network || {}) } } : EMPTY);
       } else {
-        setError(w.reason.message);
+        setData(EMPTY);
+        setError(w.reason?.message || 'Failed to load case data');
       }
       setLoading(false);
     });
@@ -223,24 +251,26 @@ export default function App() {
         {data.truncated && <div className="error-banner">Showing up to 1,000 records per collection. This view may omit additional records.</div>}
         {loading && <div className="loading-strip"><Loader2 size={14} className="spin"/> Loading case records…</div>}
 
-        {view === 'overview' && <Overview {...{data, current, refresh}} navigate={setView}/>}
-        {view === 'input' && <InputView key={caseId} {...{data, current, refresh}}/>}
-        {view === 'network' && (
-          <Suspense fallback={<div className="loading-strip">Loading graph explorer…</div>}>
-            <GraphView {...{data, current, theme, loading, error}}/>
-          </Suspense>
-        )}
-        {view === 'knowledge' && (
-          <Suspense fallback={<div className="loading-strip">Loading knowledge graph…</div>}>
-            <KnowledgeGraph {...{data, current, theme}}/>
-          </Suspense>
-        )}
-        {view === 'leads' && <LeadsView key={caseId} {...{data, current}}/>}
-        {view === 'intelligence' && (
-          <Suspense fallback={<div className="loading-strip">Loading intelligence graph…</div>}>
-            <IntelligenceDB {...{theme}}/>
-          </Suspense>
-        )}
+        <ErrorBoundary key={caseId + "-" + view} onRetry={refresh}>
+          {view === 'overview' && <Overview {...{data, current, refresh}} navigate={setView}/>}
+          {view === 'input' && <InputView key={caseId} {...{data, current, refresh}}/>}
+          {view === 'network' && (
+            <Suspense fallback={<div className="loading-strip">Loading graph explorer…</div>}>
+              <GraphView {...{data, current, theme, loading, error}}/>
+            </Suspense>
+          )}
+          {view === 'knowledge' && (
+            <Suspense fallback={<div className="loading-strip">Loading knowledge graph…</div>}>
+              <KnowledgeGraph {...{data, current, theme}}/>
+            </Suspense>
+          )}
+          {view === 'leads' && <LeadsView key={caseId} {...{data, current}}/>}
+          {view === 'intelligence' && (
+            <Suspense fallback={<div className="loading-strip">Loading intelligence graph…</div>}>
+              <IntelligenceDB {...{theme}}/>
+            </Suspense>
+          )}
+        </ErrorBoundary>
 
         <footer className="workspace-footer mono">
           SENTINELGRAPH · HUMAN REVIEW REQUIRED
