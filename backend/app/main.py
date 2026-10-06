@@ -266,23 +266,130 @@ async def upload(file:UploadFile=File(...),case_id:str=Form('default'),source_ty
   except Exception: pass
   if isinstance(exc,HTTPException): raise
   raise HTTPException(422,{'message':'The original file is saved, but processing failed. Check the format and MongoDB connection.','documentId':document_id})
+def _build_local_assistant_response(question: str, workspace: dict, docs: list) -> str:
+    q = question.lower().strip()
+    analytics = workspace.get('analytics', [])
+    nodes = workspace.get('network', {}).get('nodes', [])
+    edges = workspace.get('network', {}).get('edges', [])
+    leads = workspace.get('leads', [])
+    overview = workspace.get('overview', {})
+    node_map = {n['id']: n for n in nodes}
+
+    # 1. Summarize this case
+    if any(k in q for k in ('summarize', 'summary', 'overview', 'about this case', 'case context')):
+        top_nodes = analytics[:5]
+        top_str = ", ".join([f"**{n['label']}** ({n['type']}, {n['connections']} links)" for n in top_nodes]) if top_nodes else "None extracted yet"
+        doc_titles = [d.get('title') or d.get('filename') or d.get('_id') for d in docs[:5]]
+        docs_str = ", ".join(doc_titles) if doc_titles else f"{overview.get('reports', 0)} source documents"
+        persons_count = len([n for n in nodes if n.get('type') == 'Person'])
+        orgs_count = len([n for n in nodes if n.get('type') in ('Organization', 'Company')])
+        ids_count = len([n for n in nodes if n.get('type') in ('Phone', 'AccountNumber', 'Vehicle', 'Location', 'Domain', 'Email')])
+
+        return (
+            f"### Case Summary\n"
+            f"**Overview:** {overview.get('nodes', 0)} extracted entities, {overview.get('edges', 0)} relationships, {overview.get('reports', 0)} source records.\n\n"
+            f"**Uploaded Records:** {docs_str}\n\n"
+            f"**Top Connected Key Entities:** {top_str}\n\n"
+            f"**Breakdown:** {persons_count} Person(s), {orgs_count} Organization(s), and {ids_count} Identifier(s) (Phones/Accounts/Vehicles/Locations).\n\n"
+            f"**Analytical Leads:** {len(leads)} investigation signal(s) flagged for review."
+        )
+
+    # 2. Which entities have the most connections?
+    if any(k in q for k in ('most connections', 'most connected', 'highest degree', 'top connected', 'connected entities', 'connections')):
+        top_nodes = analytics[:8]
+        if not top_nodes:
+            return "No connected entities found in this case yet."
+        lines = ["### Top Connected Entities in Case Network\n"]
+        for idx, n in enumerate(top_nodes, 1):
+            neighbors = []
+            for e in edges:
+                if e.get('source') == n['id'] and e.get('target') in node_map:
+                    neighbors.append(node_map[e['target']]['label'])
+                elif e.get('target') == n['id'] and e.get('source') in node_map:
+                    neighbors.append(node_map[e['source']]['label'])
+            unique_neighbors = list(dict.fromkeys(neighbors))[:4]
+            neighbor_str = ", ".join(unique_neighbors)
+            lines.append(f"{idx}. **{n['label']}** (`{n['type']}`) — **{n['connections']} connections**")
+            if neighbor_str:
+                lines.append(f"   *Connected to:* {neighbor_str}")
+        return "\n".join(lines)
+
+    # 3. Show relationship evidence
+    if any(k in q for k in ('evidence', 'relationship evidence', 'supporting evidence', 'proof', 'quotes')):
+        evidence_edges = [e for e in edges if e.get('evidenceText') or e.get('reason')]
+        if not evidence_edges:
+            evidence_edges = edges[:6]
+        if not evidence_edges:
+            return "No supporting relationship evidence currently recorded in this case."
+        lines = ["### Key Extracted Relationship Evidence\n"]
+        for e in evidence_edges[:8]:
+            src_name = node_map.get(e.get('source'), {}).get('label', e.get('source', 'Unknown'))
+            tgt_name = node_map.get(e.get('target'), {}).get('label', e.get('target', 'Unknown'))
+            rel_type = e.get('type', 'ASSOCIATED_WITH')
+            quote = e.get('evidenceText') or e.get('reason') or 'Extracted association'
+            doc_id = e.get('reportId') or e.get('documentId') or 'Source Record'
+            origin = (e.get('origin') or 'reported').upper()
+            lines.append(f"• **{src_name}** `[{rel_type}]` **{tgt_name}**")
+            lines.append(f"  > *\"{quote}\"* — **{origin}** (Ref: `{doc_id}`)\n")
+        return "\n".join(lines)
+
+    # 4. Search for specific terms in entities
+    matched_nodes = [n for n in nodes if any(term in n['label'].lower() or term in n['type'].lower() for term in q.split() if len(term) > 2)]
+    if matched_nodes:
+        lines = [f"### Entities Matching Query in Case Network\n"]
+        for n in matched_nodes[:6]:
+            lines.append(f"• **{n['label']}** (`{n['type']}`)")
+            n_edges = [e for e in edges if e.get('source') == n['id'] or e.get('target') == n['id']]
+            if n_edges:
+                lines.append(f"  * {len(n_edges)} relationship(s):")
+                for e in n_edges[:3]:
+                    other_id = e['target'] if e['source'] == n['id'] else e['source']
+                    other_name = node_map.get(other_id, {}).get('label', other_id)
+                    lines.append(f"    - `{e.get('type', 'LINKED')}` ➜ **{other_name}**")
+        return "\n".join(lines)
+
+    # 5. Default case status answer
+    top_entities = ", ".join([n['label'] for n in analytics[:5]]) if analytics else "None"
+    return (
+        f"Based on **{overview.get('reports', 0)} uploaded records** in case `{workspace.get('overview', {}).get('caseId', 'default')}`:\n\n"
+        f"• **Extracted Entities:** {overview.get('nodes', 0)}\n"
+        f"• **Extracted Relationships:** {overview.get('edges', 0)}\n"
+        f"• **Top Key Hubs:** {top_entities}\n\n"
+        f"You can ask *'Summarize this case'*, *'Which entities have the most connections?'*, or *'Show relationship evidence'* for detailed investigative insights."
+    )
+
 @app.post('/api/assistant')
 def assistant(payload:Question):
  provider=get_llm_provider(); question=payload.question.lower()
  try: workspace=case_workspace(payload.case_id)
  except HTTPException: raise HTTPException(503,'The selected case is unavailable.')
  persons=[n['label'] for n in workspace['network']['nodes'] if n['type']=='Person']
- case_reports=[r for r in reports if r.get('caseId','default')==payload.case_id]
- context={'entities':workspace['analytics'][:20],'leads':workspace['leads'][:12],'relationships':workspace['network']['edges'][:100],'reports':[{'id':r['id'],'title':r['title'],'date':r['date'],'source':r['source'],'full_text':r['text'][:250000]} for r in case_reports[-3:]]}
+ 
+ # Load reports from MongoDB or in-memory array
+ case_reports = []
+ if mongo.db is not None:
+     try: case_reports = list(mongo.db.reports.find({'caseId': payload.case_id}, {'_id': 0}))
+     except Exception: pass
+ if not case_reports:
+     case_reports = [r for r in reports if r.get('caseId','default') == payload.case_id]
+
  if any(term in question for term in ('culprit','criminal','guilty','guilt')):
   named=', '.join(persons) if persons else 'no people were confidently extracted'
   answer=f"I cannot identify ‘culprits’ or determine guilt from these records. The people explicitly named in the current uploaded sources are: {named}. Their presence in a report or graph is a reported association that requires independent verification and any legal outcome must come from the court record."
   return {'answer':answer,'disclaimer':'This response summarizes reported data and potential leads only. It is not proof of criminality.'}
- if provider.available:
-  answer=provider.generate(f'''You are SentinelGraph's document-grounded case assistant. Use the FULL TEXT of the uploaded records in the case context to answer the user's question directly and completely. Answer questions about all named people, identifiers, phone numbers, vehicles, locations, dates, FIR/case details, stated events, and stated court outcomes when they appear in the record. Cite the relevant report ID. Do not rely only on the graph summary.
 
-Never invent a fact. If a phone number or requested fact is not in the uploaded record, say it is not stated. Do not call anyone a criminal or guilty: use “named in the record”, “reported”, and “requires verification”.\nCASE CONTEXT:{context}\nQUESTION:{payload.question}''') or 'Gemini is temporarily unavailable. Please try again.'
- else: answer=f"The selected case contains {workspace['overview']['nodes']} entities, {workspace['overview']['edges']} relationships and {workspace['overview']['reports']} source files. The case assistant is not configured."
+ answer = None
+ if provider.available:
+  context={'entities':workspace['analytics'][:20],'leads':workspace['leads'][:12],'relationships':workspace['network']['edges'][:100],'reports':[{'id':r.get('id', r.get('_id')),'title':r.get('title',''),'date':r.get('date',''),'source':r.get('source',''),'full_text':(r.get('text') or '')[:250000]} for r in case_reports[-3:]]}
+  res = provider.generate(f'''You are SentinelGraph's document-grounded case assistant. Use the FULL TEXT of the uploaded records in the case context to answer the user's question directly and completely. Answer questions about all named people, identifiers, phone numbers, vehicles, locations, dates, FIR/case details, stated events, and stated court outcomes when they appear in the record. Cite the relevant report ID. Do not rely only on the graph summary.
+
+Never invent a fact. If a phone number or requested fact is not in the uploaded record, say it is not stated. Do not call anyone a criminal or guilty: use “named in the record”, “reported”, and “requires verification”.\nCASE CONTEXT:{context}\nQUESTION:{payload.question}''')
+  if res and not res.startswith('Gemini is temporarily unavailable'):
+      answer = res
+
+ if not answer:
+  answer = _build_local_assistant_response(payload.question, workspace, case_reports or workspace.get('documents', []))
+
  return {'answer':answer,'disclaimer':'This response summarizes reported data and potential leads only. It is not proof of criminality.'}
 
 @app.get('/api/intelligence-db')
