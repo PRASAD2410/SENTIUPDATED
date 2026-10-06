@@ -1,6 +1,7 @@
 export const SOURCE_TYPES = ['FIR', 'Transaction Records', 'Call Logs', 'Other'];
 export const FILE_ACCEPT = '.pdf,.docx,.csv,.tsv,.xlsx,.txt';
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
+export const MAX_FILE_SIZE_MB = 1024;
+const MAX_FILE_SIZE = MAX_FILE_SIZE_MB * 1024 * 1024;
 const FORMATS = new Set(FILE_ACCEPT.split(','));
 
 function fileKey(file) {
@@ -17,7 +18,7 @@ export function appendUploadFiles(existing, incoming, sourceType = 'Other') {
     const extension = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
     const validationError = !FORMATS.has(extension)
       ? 'Unsupported format. Choose PDF, DOCX, CSV, TSV, XLSX, or TXT.'
-      : file.size > MAX_FILE_SIZE ? 'This file exceeds the 10 MB limit.'
+      : file.size > MAX_FILE_SIZE ? `This file exceeds the ${MAX_FILE_SIZE_MB >= 1024 ? (MAX_FILE_SIZE_MB / 1024) + ' GB' : MAX_FILE_SIZE_MB + ' MB'} limit.`
         : file.size === 0 ? 'This file is empty.' : '';
     next.push({id, file, sourceType, status: validationError ? 'failed' : 'queued', error: validationError, validationError});
   }

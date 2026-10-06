@@ -80,7 +80,7 @@ class CaseManagementTests(unittest.TestCase):
         doc=self.store.save_document('default','legacy.txt',b'Legacy original')
         self.store.document_status('default',doc['documentId'],'completed')
         self.assertEqual(self.act('default').status_code,200)
-        self.assertEqual(self.store.list_cases()[0]['title'],'Default workspace')
+        self.assertEqual(self.store.list_cases()[0]['title'],'Case 1')
 
     def test_file_ownership_mismatch_aborts_before_removing_data(self):
         a=self.seed('ONE');b=self.seed('TWO')
@@ -114,7 +114,7 @@ class CaseManagementTests(unittest.TestCase):
         self.assertEqual(view['overview'],{'nodes':0,'edges':0,'reports':0,'leads':0})
         self.assertEqual(self.store.db.mentions.count_documents({}),0)
         self.assertEqual(self.main.edges,[])
-        self.assertEqual(self.store.list_cases()[0]['title'],'Default workspace')
+        self.assertEqual(self.store.list_cases()[0]['title'],'Case 1')
 
     def test_orphan_original_is_discoverable_and_deletable(self):
         file_id=GridFS(self.store.db).put(b'Legacy original only',metadata={'caseId':'ORPHAN'})

@@ -14,12 +14,12 @@ test('Later file selections append and preserve each source type without duplica
 });
 
 test('Unsupported and oversized files remain visible with individual errors', () => {
-  const queue = appendUploadFiles([], [file('valid.CSV'), file('bad.exe'), file('large.pdf', 10 * 1024 * 1024 + 1), file('empty.txt', 0)]);
+  const queue = appendUploadFiles([], [file('valid.CSV'), file('bad.exe'), file('large.pdf', 1024 * 1024 * 1024 + 1), file('empty.txt', 0)]);
   assert.equal(queue.length, 4);
   assert.deepEqual(queue.map(entry => entry.status), ['queued', 'failed', 'failed', 'failed']);
   assert.equal(pendingUploads(queue).length, 1);
   assert.match(queue[1].error, /Unsupported/);
-  assert.match(queue[2].error, /10 MB/);
+  assert.match(queue[2].error, /1 GB limit/);
   assert.match(queue[3].error, /empty/);
 });
 

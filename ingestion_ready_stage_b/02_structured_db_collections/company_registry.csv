@@ -1,0 +1,81 @@
+company_id,company_name,registration_number,company_type,industry,incorporation_date,status,registered_address_id,primary_bank_account_id
+COMP-4AF5B6,Matrix Solutions LLP,U36608MH2017PTC406701,llp,Financial Services,2023-07-27,active,LOC-50C1EB,ACC-58E6180B
+COMP-672D0C,Zenith Enterprises,U38123MH2013PTC284358,proprietorship,Import & Export,2023-12-06,active,LOC-961151,ACC-1210F28B
+COMP-8C5394,Global Trading Pvt Ltd,U87051MH2014PTC791897,private_limited,Logistics & Transport,2020-10-08,active,LOC-550AE8,ACC-33CC4B23
+COMP-61A014,Nexus Trading,U86093MH2012PTC998688,proprietorship,Real Estate & Construction,2020-02-19,active,LOC-DFF494,ACC-C2BF76DA
+COMP-75E712,Vanguard Ventures Pvt Ltd,U26036MH2012PTC576557,private_limited,Manufacturing,2024-02-29,active,LOC-C75B69,ACC-7C6E46FE
+COMP-E21EDE,Horizon Logistics,U49941MH2013PTC548230,proprietorship,Import & Export,2021-12-01,active,LOC-11E374,ACC-94AC11ED
+COMP-BF5FF8,Prime Services Pvt Ltd,U79695MH2022PTC516350,private_limited,Real Estate & Construction,2024-01-18,active,LOC-858C2E,ACC-E236B352
+COMP-BD09D9,Zenith Services Pvt Ltd,U85018MH2022PTC228339,private_limited,Textiles,2020-04-10,active,LOC-B9CFDA,ACC-7E7C61FD
+COMP-FC1E61,Sterling Retail Pvt Ltd,U33317MH2023PTC860103,private_limited,Manufacturing,2019-11-27,active,LOC-60AA0D,ACC-386E9A58
+COMP-6D3AF6,Global Enterprises Pvt Ltd,U68522MH2022PTC701497,private_limited,Information Technology,2019-11-19,active,LOC-B8654D,ACC-D773E12F
+COMP-C5EFD4,Horizon Fintech Pvt Ltd,U86683MH2018PTC645635,private_limited,Textiles,2022-07-30,active,LOC-CBE54C,ACC-C5EE04B5
+COMP-B82DD2,Matrix Imports & Exports Pvt Ltd,U10115MH2017PTC548566,private_limited,Financial Services,2019-12-04,active,LOC-0F4A38,ACC-5D036241
+COMP-6F9C4A,Ganga Services Pvt Ltd,U80681MH2021PTC869574,private_limited,Textiles,2024-09-12,active,LOC-DFF494,ACC-7A68C9B0
+COMP-130357,Prime Imports & Exports Pvt Ltd,U37199MH2020PTC797960,private_limited,Consulting,2024-08-29,active,LOC-11E374,ACC-BCC7C95B
+COMP-64AE3E,Zenith Trading Pvt Ltd,U59322MH2023PTC275057,private_limited,Retail & Wholesale,2021-02-21,active,LOC-8343B9,ACC-7B0616D9
+COMP-4A93B4,BlueChip Consultancy Pvt Ltd,U87155MH2016PTC851882,private_limited,Retail & Wholesale,2022-05-17,active,LOC-8B4EBB,ACC-38351EE9
+COMP-20244A,Prime Ventures Pvt Ltd,U95919MH2018PTC686750,private_limited,Real Estate & Construction,2021-10-20,active,LOC-443CDE,ACC-B624CA36
+COMP-70A62F,Prime Infotech Pvt Ltd,U67847MH2021PTC991574,private_limited,Information Technology,2019-09-18,active,LOC-0826C0,ACC-A43FEA7D
+COMP-80B8C5,BlueChip Ventures Pvt Ltd,U86876MH2024PTC808178,private_limited,Financial Services,2024-04-05,active,LOC-550AE8,ACC-77F63B0E
+COMP-84EEF2,Nexus Ventures Pvt Ltd,U75360MH2015PTC928095,private_limited,Information Technology,2020-01-01,active,LOC-CBE54C,ACC-7EF3B3A5
+COMP-4C93C3,Prime Trading,U51534MH2014PTC374581,proprietorship,Import & Export,2022-08-24,active,LOC-60AA0D,ACC-E44EED1A
+COMP-018464,Sterling Logistics Pvt Ltd,U23583MH2024PTC676931,private_limited,Import & Export,2022-06-07,active,LOC-9BE109,ACC-756F4E72
+COMP-87F5AB,Surya Metals LLP,U61259MH2014PTC785185,llp,Real Estate & Construction,2022-08-03,active,LOC-11E374,ACC-9B7ECBBB
+COMP-83933A,Matrix Metals Pvt Ltd,U31215MH2019PTC249667,private_limited,Manufacturing,2021-08-13,active,LOC-6B641B,ACC-49A6687A
+COMP-7CEEEB,Vanguard Imports & Exports Pvt Ltd,U50137MH2014PTC350329,private_limited,Textiles,2023-02-11,active,LOC-443CDE,ACC-CE3B9F89
+COMP-FE6531,Horizon Ventures Pvt Ltd,U77845MH2021PTC462955,private_limited,Retail & Wholesale,2022-04-15,active,LOC-550AE8,ACC-913F2C38
+COMP-1C21B4,Matrix Ventures LLP,U95743MH2012PTC366671,llp,Real Estate & Construction,2021-10-11,active,LOC-430B0B,ACC-5562165A
+COMP-6096A4,Apex Ventures,U42847MH2020PTC320539,proprietorship,Retail & Wholesale,2023-03-09,active,LOC-8B4EBB,ACC-120FF6B9
+COMP-FEBC9D,Kaveri Enterprises Pvt Ltd,U31688MH2018PTC478890,private_limited,Manufacturing,2022-02-14,active,LOC-DFF494,ACC-97A1497C
+COMP-42D278,Shree Imports & Exports LLP,U20197MH2016PTC442697,llp,Consulting,2024-08-25,active,LOC-12C32F,ACC-097AFD1A
+COMP-0D0937,Nexus Consultancy Pvt Ltd,U40273MH2019PTC847855,private_limited,Textiles,2024-09-02,active,LOC-961151,ACC-06185A21
+COMP-ACDC2B,Royal Consultancy Pvt Ltd,U23267MH2015PTC607081,private_limited,Textiles,2022-06-19,active,LOC-CBE54C,ACC-B0C293CE
+COMP-1C4C58,Indus Retail Pvt Ltd,U25647MH2019PTC888992,private_limited,Import & Export,2022-07-13,active,LOC-6B641B,ACC-4F150C3F
+COMP-3E8655,Horizon Ventures Pvt Ltd,U86932MH2014PTC661083,private_limited,Manufacturing,2021-10-14,active,LOC-B8654D,ACC-33D19CC0
+COMP-88486E,Indus Retail,U46510MH2012PTC825039,proprietorship,Real Estate & Construction,2022-06-12,active,LOC-5653D4,ACC-D811FFBB
+COMP-19A812,Apex Imports & Exports LLP,U87300MH2019PTC636982,llp,Retail & Wholesale,2024-05-19,active,LOC-550AE8,ACC-25752CBE
+COMP-9BB808,BlueChip Holdings Pvt Ltd,U77669MH2014PTC982381,private_limited,Manufacturing,2020-11-24,active,LOC-5653D4,ACC-EB4E4B0F
+COMP-810732,Apex Holdings Pvt Ltd,U27754MH2015PTC742145,private_limited,Logistics & Transport,2019-10-29,active,LOC-50C1EB,ACC-0DE586BF
+COMP-B5B832,Everest Consultancy LLP,U42483MH2014PTC211141,llp,Retail & Wholesale,2023-12-22,active,LOC-443CDE,ACC-C787881E
+COMP-E99D2B,Royal Consultancy Pvt Ltd,U89674MH2023PTC650598,private_limited,Import & Export,2023-07-04,active,LOC-8F9B34,ACC-C0B1866F
+COMP-340BE0,Ganga Infotech Pvt Ltd,U47874MH2012PTC543231,private_limited,Real Estate & Construction,2019-07-23,active,LOC-1A1F14,ACC-BBCCA8A2
+COMP-76830C,Global Consultancy,U37304MH2021PTC527044,proprietorship,Retail & Wholesale,2020-12-31,active,LOC-961151,ACC-A1FD557F
+COMP-1606B3,Matrix Enterprises LLP,U71473MH2020PTC546701,llp,Information Technology,2021-06-02,active,LOC-B8654D,ACC-75F2563F
+COMP-520989,Kaveri Consultancy Pvt Ltd,U92841MH2020PTC955758,private_limited,Retail & Wholesale,2021-01-23,active,LOC-50C1EB,ACC-DEDB4CF0
+COMP-1C26C2,Matrix Holdings Pvt Ltd,U25379MH2019PTC913047,private_limited,Retail & Wholesale,2019-10-13,active,LOC-60AA0D,ACC-D16F5E90
+COMP-1E3FCD,Global Metals,U93272MH2016PTC723994,proprietorship,Manufacturing,2020-06-22,active,LOC-C75B69,ACC-ECCD934A
+COMP-5EB5DF,Sterling Retail LLP,U55780MH2014PTC175079,llp,Financial Services,2020-06-08,active,LOC-C75B69,ACC-70D63FED
+COMP-E8757C,Global Infotech Pvt Ltd,U94921MH2021PTC346988,private_limited,Real Estate & Construction,2024-06-08,active,LOC-C609DC,ACC-2C6ED032
+COMP-1356DD,Horizon Trading Pvt Ltd,U85784MH2023PTC449965,private_limited,Financial Services,2022-11-07,active,LOC-8343B9,ACC-13597BDB
+COMP-3BBDB8,Shree Metals Pvt Ltd,U65740MH2017PTC234536,private_limited,Logistics & Transport,2020-05-28,active,LOC-C75B69,ACC-E65174BB
+COMP-B83B75,Royal Imports & Exports Pvt Ltd,U44764MH2023PTC751767,private_limited,Information Technology,2019-11-19,active,LOC-C609DC,ACC-08E51043
+COMP-BCAC07,Apex Enterprises Pvt Ltd,U85815MH2020PTC942069,private_limited,Real Estate & Construction,2020-09-30,active,LOC-2E747C,ACC-56883E29
+COMP-BE16C2,Horizon Trading Pvt Ltd,U25525MH2015PTC952038,private_limited,Information Technology,2019-11-20,active,LOC-B8654D,ACC-2BADC578
+COMP-BFDD5C,Indus Enterprises Pvt Ltd,U61364MH2020PTC581918,private_limited,Financial Services,2023-04-26,active,LOC-246595,ACC-015B2291
+COMP-44F1D8,Apex Enterprises Pvt Ltd,U24794MH2021PTC346135,private_limited,Import & Export,2021-04-17,active,LOC-1A1F14,ACC-DB551B0A
+COMP-DDAD42,Horizon Consultancy LLP,U64776MH2014PTC922996,llp,Import & Export,2023-09-15,active,LOC-550AE8,ACC-1DFD8E71
+COMP-313853,Matrix Holdings,U85967MH2013PTC584516,proprietorship,Textiles,2024-07-14,active,LOC-A8778C,ACC-505057D4
+COMP-12573C,Vanguard Ventures,U31212MH2013PTC414259,proprietorship,Retail & Wholesale,2022-01-28,active,LOC-DA2259,ACC-4B234F00
+COMP-7F4A56,Royal Logistics Pvt Ltd,U43587MH2015PTC264293,private_limited,Logistics & Transport,2022-03-08,active,LOC-DA2259,ACC-FD75B564
+COMP-D5D44E,Shree Holdings Pvt Ltd,U49615MH2024PTC764252,private_limited,Logistics & Transport,2020-09-02,active,LOC-9BE109,ACC-17D9777C
+COMP-1B8C0F,Matrix Imports & Exports LLP,U84715MH2015PTC801995,llp,Financial Services,2023-01-02,active,LOC-B9CFDA,ACC-3713E652
+COMP-AB5347,Horizon Ventures,U74053MH2022PTC743451,proprietorship,Import & Export,2024-08-25,active,LOC-9BE109,ACC-9A55F093
+COMP-55BDA9,Kaveri Services Pvt Ltd,U79579MH2024PTC118336,private_limited,Retail & Wholesale,2023-03-21,active,LOC-5653D4,ACC-C2684C5C
+COMP-BFD14A,BlueChip Consultancy Pvt Ltd,U76448MH2017PTC273717,private_limited,Real Estate & Construction,2024-04-15,active,LOC-7CA5D0,ACC-654B5CB3
+COMP-76976B,Sterling Fintech Pvt Ltd,U43981MH2016PTC344465,private_limited,Real Estate & Construction,2024-06-11,active,LOC-7CA5D0,ACC-9CD5B8A2
+COMP-6F91C5,Horizon Solutions Pvt Ltd,U67409MH2015PTC846463,private_limited,Information Technology,2019-07-12,active,LOC-2E747C,ACC-FD75346F
+COMP-ECCC88,Apex Retail Pvt Ltd,U50274MH2024PTC631084,private_limited,Financial Services,2022-09-13,active,LOC-B9CFDA,ACC-32F78B6E
+COMP-C9EA81,Ganga Consultancy,U23236MH2012PTC285322,proprietorship,Information Technology,2022-11-27,active,LOC-B9CFDA,ACC-1506F289
+COMP-4BBFFE,Sterling Trading Pvt Ltd,U64579MH2019PTC441513,private_limited,Information Technology,2024-01-18,active,LOC-2E747C,ACC-1D4449BF
+COMP-D6B693,BlueChip Infotech Pvt Ltd,U24330MH2012PTC483690,private_limited,Consulting,2020-02-16,active,LOC-A56A62,ACC-3CDD5C4D
+COMP-9C7840,Royal Trading Pvt Ltd,U80323MH2019PTC372626,private_limited,Manufacturing,2019-12-24,active,LOC-8343B9,ACC-3A21E718
+COMP-48C7EE,Sterling Ventures Pvt Ltd,U27284MH2012PTC760818,private_limited,Financial Services,2023-09-04,active,LOC-961151,ACC-1337BBAB
+COMP-23E64A,BlueChip Holdings Pvt Ltd,U39404MH2012PTC128957,private_limited,Import & Export,2021-06-26,active,LOC-12C32F,ACC-A2C871F5
+COMP-DCD384,Nexus Imports & Exports LLP,U30779MH2013PTC470128,llp,Real Estate & Construction,2021-02-03,active,LOC-60AA0D,ACC-0AB280E4
+COMP-6C40FF,Zenith Services Pvt Ltd,U52456MH2019PTC920484,private_limited,Import & Export,2022-07-03,active,LOC-DA2259,ACC-6019F3A4
+COMP-B11E5D,Apex Holdings Pvt Ltd,U76519MH2014PTC203919,private_limited,Consulting,2023-06-15,active,LOC-1A1F14,ACC-C73035BC
+COMP-6CA2CE,Zenith Logistics,U47929MH2015PTC437071,proprietorship,Manufacturing,2020-08-10,active,LOC-A8778C,ACC-D3F9A70B
+COMP-ED63C9,Apex Solutions LLP,U27430MH2014PTC849953,llp,Manufacturing,2019-12-09,active,LOC-60AA0D,ACC-E1310E3B
+COMP-266A22,Royal Consultancy Pvt Ltd,U81846MH2014PTC529524,private_limited,Information Technology,2024-05-07,active,LOC-5653D4,ACC-6F54C387
+COMP-499EE8,Vanguard Imports & Exports,U99721MH2023PTC678819,proprietorship,Textiles,2024-03-14,active,LOC-550AE8,ACC-5F344587

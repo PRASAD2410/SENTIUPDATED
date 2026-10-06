@@ -202,48 +202,29 @@ class MongoStore:
         report_id = record.get('reportId') if record else None
         if not report_id:
             raise ValueError('The document has no completed extraction to reanalyze.')
-        from .structured_calls import extract_calls, VERSION as CALL_VERSION
-        from .extraction import entity, extract, build_relationships, get_extraction_version, RelationshipExtractionError
-        mapped = extract_calls(parsed['units'], entity)
-        mapped_warnings = None
-        active_version = REL_VERSION
-        if mapped['handled']:
-            # Reuse the same report and original file. Keep the older NER
-            # mentions as inactive audit records, replacing their graph view.
-            result = extract(parsed['text'], parsed, scope=f'case:{case_id}')
-            if not result.get('relationshipStatus', {}).get('complete', True):
-                raise RelationshipExtractionError(' '.join(result['warnings'][:3]) or 'Gemini relationship extraction failed; existing findings were retained.')
-            relationship_status = result.get('relationshipStatus')
-            report = self.db.reports.find_one({'_id': report_id, 'caseId': case_id})
-            if report is None:
-                raise ValueError('The extraction report is missing.')
-            old_ids = self.db.entities.distinct('id', {'caseId': case_id, 'reportIds': report_id})
-            saved = self.save_extraction(case_id, {**report, 'id': report_id}, result)
-            if not saved['saved']:
-                raise RuntimeError(saved['warning'])
-            active_mentions = [f'{report_id}:{"columns:" if m.get("method") == "structured-column" else ""}{i}'
-                               for i, m in enumerate(result['mentions'])]
-            self.db.mentions.update_many({'caseId': case_id, 'reportId': report_id,
-                '_id': {'$nin': active_mentions}}, {'$set': {'active': False}})
-            new_ids = {e['id'] for e in result['entities']}
-            for old_id in set(old_ids) - new_ids:
-                self.db.entities.update_one({'caseId': case_id, 'id': old_id}, {'$pull': {'reportIds': report_id}})
-                self.db.entities.update_one({'caseId': case_id, 'id': old_id, 'reportIds': []}, {'$set': {'active': False}})
-            results = result['relationships']
-            mapped_warnings = result['warnings']
-            active_version = CALL_VERSION
-        else:
-            mentions = list(self.db.mentions.find({'caseId': case_id, 'reportId': report_id, 'active': {'$ne': False}}))
-            entities = self.extraction_for_report(case_id, report_id)['entities']
-            relation_result = build_relationships(parsed['units'], entities, mentions)
-            if not relation_result['relationshipStatus']['complete']:
-                raise RelationshipExtractionError(' '.join(relation_result['warnings'][:3]) or 'Gemini relationship extraction failed; existing findings were retained.')
-            results = relation_result['relationships']
-            relationship_status = relation_result['relationshipStatus']
-            mapped_warnings = relation_result['warnings']
-            if relationship_status['mode'] == 'gemini':
-                from .gemini_relations import VERSION as GEMINI_VERSION
-                active_version = GEMINI_VERSION
+        from .extraction import extract, get_extraction_version, RelationshipExtractionError
+        result = extract(parsed['text'], parsed, scope=f'case:{case_id}')
+        if not result.get('relationshipStatus', {}).get('complete', True):
+            raise RelationshipExtractionError(' '.join(result['warnings'][:3]) or 'Relationship extraction failed; existing findings were retained.')
+        relationship_status = result.get('relationshipStatus')
+        report = self.db.reports.find_one({'_id': report_id, 'caseId': case_id})
+        if report is None:
+            raise ValueError('The extraction report is missing.')
+        old_ids = self.db.entities.distinct('id', {'caseId': case_id, 'reportIds': report_id})
+        saved = self.save_extraction(case_id, {**report, 'id': report_id}, result)
+        if not saved['saved']:
+            raise RuntimeError(saved['warning'])
+        active_mentions = [f'{report_id}:{"columns:" if m.get("method") == "structured-column" else ""}{i}'
+                           for i, m in enumerate(result['mentions'])]
+        self.db.mentions.update_many({'caseId': case_id, 'reportId': report_id,
+            '_id': {'$nin': active_mentions}}, {'$set': {'active': False}})
+        new_ids = {e['id'] for e in result['entities']}
+        for old_id in set(old_ids) - new_ids:
+            self.db.entities.update_one({'caseId': case_id, 'id': old_id}, {'$pull': {'reportIds': report_id}})
+            self.db.entities.update_one({'caseId': case_id, 'id': old_id, 'reportIds': []}, {'$set': {'active': False}})
+        results = result['relationships']
+        mapped_warnings = result['warnings']
+        active_version = result.get('extractionVersion', get_extraction_version())
         now = datetime.now(timezone.utc)
         # Restore/reuse stable IDs for matches; preserve superseded evidence.
         for relationship in results:
@@ -281,7 +262,7 @@ class MongoStore:
         discovered.update(self.db['fs.files'].distinct('metadata.caseId'))
         for case_id in sorted(c for c in discovered if isinstance(c, str) and c):
             if case_id not in known:
-                cases.append({'id': case_id, 'title': 'Default workspace' if case_id == 'default' else case_id,
+                cases.append({'id': case_id, 'title': 'Case 1' if case_id == 'default' else case_id,
                               'classification': 'Restricted', 'status': 'Active', 'summary': ''})
         return cases
 
@@ -332,7 +313,7 @@ class MongoStore:
         elif self.db.cases.find_one({'id': case_id}) is None:
             # Keep a legacy/default workspace visible after clearing its records.
             self.db.cases.insert_one({'_id': case_id, 'id': case_id,
-                'title': 'Default workspace' if case_id == 'default' else case_id,
+                'title': 'Case 1' if case_id == 'default' else case_id,
                 'classification': 'Restricted', 'status': 'Active', 'summary': '',
                 'createdAt': datetime.now(timezone.utc)})
         return {'caseId': case_id, 'deleted': delete_case, 'removed': counts,

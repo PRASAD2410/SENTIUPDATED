@@ -16,11 +16,11 @@ from .file_reader import parse_upload, UnsupportedFormatError, ALLOWED
 from .llm import get_llm_provider
 from .mongo_store import MongoStore, CaseBusyError
 from .nlp import nlp_status
+from .demo_data import DEMO_REPORTS
 
 app=FastAPI(title='SentinelGraph API',version='0.2.0')
 app.add_middleware(CORSMiddleware,allow_origins=[os.getenv('FRONTEND_ORIGIN','http://localhost:5173')],allow_methods=['*'],allow_headers=['*'])
-# Start every local session with an empty case. Findings are created only from
-# the reports and documents the investigator submits in that session.
+# Session findings cache; durable data stored in MongoDB and Neo4j
 nodes={}; edges=[]; reports=[]; neo=NeoStore(); mongo=MongoStore()
 class Ingest(BaseModel):
  text:str=Field(min_length=15)
@@ -108,11 +108,24 @@ def clear_case_data(case_id:str,payload:ConfirmCaseAction):
 @app.delete('/api/cases/{case_id}')
 def delete_case(case_id:str,payload:ConfirmCaseAction):
  return manage_case_data(case_id,payload,True)
+class EdgeReview(BaseModel):
+ review_status:str=Field(pattern=r'^(accepted|rejected|pending)$')
+
 @app.get('/api/cases/{case_id}/workspace')
-def case_workspace(case_id:str):
+def case_workspace(case_id:str, min_confidence:float=0.0, layer:str|None=None, time_start:str|None=None, time_end:str|None=None):
  try:
   entities=mongo.entities_for_case(case_id); relationships=mongo.relationships_for_case(case_id); documents=mongo.documents_for_case(case_id)
  except Exception: raise HTTPException(503,'Case records are unavailable. Check MongoDB.')
+ 
+ if min_confidence > 0:
+  relationships=[r for r in relationships if float(r.get('confidence') or 1.0) >= min_confidence]
+ if layer:
+  relationships=[r for r in relationships if r.get('method') == layer or r.get('type') == layer]
+ if time_start:
+  relationships=[r for r in relationships if not r.get('timestamp') or str(r['timestamp']) >= time_start]
+ if time_end:
+  relationships=[r for r in relationships if not r.get('timestamp') or str(r['timestamp']) <= time_end]
+
  # Collapse historical report-scoped spellings for display, retaining aliases
  # and all source references. This is name grouping, not verified identity.
  groups={}; aliases={}
@@ -140,6 +153,14 @@ def case_workspace(case_id:str):
   case_leads.append({'severity':'medium','title':f"Reported connections: {e['label']}",'entity':e['label'],'entityId':e['id'],'reason':f"Linked to {e['connections']} distinct entities by extracted source statements. Review the context and alternative explanations.",'rule':'Three or more distinct connections','sources':sorted({r['reportId'] for r in supporting}),'evidence':supporting})
  return {'network':{'nodes':entities,'edges':valid},'documents':documents,'analytics':rankings,'leads':case_leads,
          'overview':{'nodes':len(entities),'edges':len(valid),'reports':len(documents),'leads':len(case_leads)},'truncated':any(len(items)>=1000 for items in (entities,relationships,documents))}
+
+@app.post('/api/cases/{case_id}/edges/{edge_id}/review')
+def review_edge(case_id:str, edge_id:str, payload:EdgeReview):
+ if mongo.db is None: raise HTTPException(503, 'MongoDB is unavailable.')
+ res = mongo.db.relationships.update_one({'_id': edge_id, 'caseId': case_id}, {'$set': {'reviewStatus': payload.review_status, 'updatedAt': datetime.now()}})
+ if res.matched_count == 0:
+  raise HTTPException(404, 'Edge not found.')
+ return {'edgeId': edge_id, 'caseId': case_id, 'reviewStatus': payload.review_status}
 @app.get('/api/cases/{case_id}/documents')
 def stored_documents(case_id:str):
  try: return {'caseId':case_id,'documents':mongo.documents_for_case(case_id),'limit':1000}
@@ -157,6 +178,14 @@ def download_document(case_id:str,document_id:str):
  return Response(content,media_type='application/octet-stream',headers={
   'Content-Disposition': "attachment; filename*=UTF-8''"+quote(record['filename'],safe=''),
   'X-Content-Type-Options': 'nosniff'})
+@app.get('/api/cases/{case_id}/documents/{document_id}')
+def get_document_details(case_id:str,document_id:str):
+ if mongo.db is None: raise HTTPException(503,'MongoDB is unavailable.')
+ doc=mongo.db.documents.find_one({'_id':document_id,'caseId':case_id},{'_id':0})
+ if not doc: raise HTTPException(404,'Document not found.')
+ report=mongo.db.reports.find_one({'_id':doc.get('reportId'),'caseId':case_id},{'_id':0}) if doc.get('reportId') else None
+ extraction=mongo.extraction_for_report(case_id,doc['reportId']) if doc.get('reportId') else {'entities':[],'relationships':[],'mentions':[]}
+ return {'document':doc,'report':report,'entities':extraction.get('entities',[]),'relationships':extraction.get('relationships',[]),'mentions':extraction.get('mentions',[])}
 @app.post('/api/cases/{case_id}/documents/{document_id}/reanalyze')
 def reanalyze_document_relationships(case_id:str,document_id:str):
  try: original=mongo.original_document(case_id,document_id)
@@ -184,6 +213,10 @@ def clear_workspace():
  # The local MVP is intentionally session-based; clearing starts a fresh case.
  nodes.clear(); edges.clear(); reports.clear()
  return {'message':'Workspace cleared. Start a new case by uploading a source record.'}
+@app.post('/api/demo/seed')
+def seed_demo(case_id:str='default'):
+ seeded=[process(r['text'],r['title'],r['source'],r['date'],case_id=case_id) for r in DEMO_REPORTS]
+ return {'status':'ok','caseId':case_id,'seededReports':len(seeded),'message':f'Successfully seeded {len(seeded)} demo reports into case {case_id}.'}
 @app.post('/api/ingest')
 def ingest(payload:Ingest): return process(payload.text,payload.title,'Investigator submitted',payload.date,case_id=payload.case_id)
 @app.post('/api/upload')
@@ -191,7 +224,8 @@ async def upload(file:UploadFile=File(...),case_id:str=Form('default'),source_ty
  import re
  if not re.fullmatch(r'[A-Za-z0-9_-]{1,100}',case_id): raise HTTPException(422,'Case ID must contain 1-100 letters, digits, underscores or hyphens.')
  content=await file.read()
- if len(content)>10*1024*1024: raise HTTPException(413,'Maximum file size is 10 MB.')
+ max_size=int(os.getenv('MAX_UPLOAD_SIZE_MB','1024'))*1024*1024
+ if len(content)>max_size: raise HTTPException(413,f'Maximum file size is {max_size//(1024*1024)} MB.')
  filename=(file.filename or 'upload.txt').replace('\\','/').rsplit('/',1)[-1]
  if Path(filename).suffix.lower() not in ALLOWED: raise HTTPException(415,'Supported formats: PDF, DOCX, TXT, CSV, TSV, XLSX.')
  try: document=mongo.save_document(case_id,filename,content,file.content_type)
@@ -250,3 +284,100 @@ def assistant(payload:Question):
 Never invent a fact. If a phone number or requested fact is not in the uploaded record, say it is not stated. Do not call anyone a criminal or guilty: use “named in the record”, “reported”, and “requires verification”.\nCASE CONTEXT:{context}\nQUESTION:{payload.question}''') or 'Gemini is temporarily unavailable. Please try again.'
  else: answer=f"The selected case contains {workspace['overview']['nodes']} entities, {workspace['overview']['edges']} relationships and {workspace['overview']['reports']} source files. The case assistant is not configured."
  return {'answer':answer,'disclaimer':'This response summarizes reported data and potential leads only. It is not proof of criminality.'}
+
+@app.get('/api/intelligence-db')
+def intelligence_db(collection: str = 'ref_accounts', limit: int = 500):
+    """Query any reference DB collection imported via mongoimport and return graph-ready nodes/edges."""
+    if mongo.db is None:
+        raise HTTPException(503, 'MongoDB is unavailable.')
+    allowed = {'ref_accounts', 'ref_kyc', 'ref_companies', 'ref_directors', 'ref_vehicles', 'ref_vehicle_events', 'ref_cyber_events', 'ref_locations'}
+    if collection not in allowed:
+        raise HTTPException(400, f'Unknown collection. Allowed: {sorted(allowed)}')
+    docs = list(mongo.db[collection].find({}, {'_id': 0}).limit(limit))
+    return {'collection': collection, 'count': len(docs), 'records': docs}
+
+@app.get('/api/intelligence-db/graph')
+def intelligence_db_graph(limit: int = 800):
+    """Build a cross-collection knowledge graph from all reference collections."""
+    if mongo.db is None:
+        raise HTTPException(503, 'MongoDB is unavailable.')
+    nodes = {}
+    edges = []
+    edge_id = 0
+
+    def add_node(nid, label, ntype, meta=None):
+        if nid and nid not in nodes:
+            nodes[nid] = {'id': nid, 'label': label, 'type': ntype, 'meta': meta or {}}
+
+    def add_edge(src, tgt, rel, meta=None):
+        nonlocal edge_id
+        if src and tgt and src != tgt:
+            edges.append({'id': f'e{edge_id}', 'source': src, 'target': tgt, 'relation': rel, 'label': rel, 'meta': meta or {}})
+            edge_id += 1
+
+    # KYC — persons
+    for r in mongo.db.get_collection('ref_kyc').find({}, {'_id': 0}).limit(limit):
+        pid = r.get('person_id') or r.get('id')
+        name = r.get('name') or r.get('full_name') or pid
+        if pid:
+            add_node(pid, name, 'Person', {'aadhaar': r.get('aadhaar'), 'pan': r.get('pan'), 'address': r.get('address')})
+
+    # Accounts — link person → account
+    for r in mongo.db.get_collection('ref_accounts').find({}, {'_id': 0}).limit(limit):
+        aid = r.get('account_id') or r.get('id')
+        pid = r.get('owner_id') or r.get('person_id')
+        bank = r.get('bank', '')
+        acc_num = r.get('account_number', '')
+        label = f"{bank} ···{acc_num[-4:]}" if acc_num else aid
+        if aid:
+            add_node(aid, label, 'Account', {'bank': bank, 'type': r.get('account_type'), 'upi': r.get('upi_id')})
+        if pid and aid:
+            add_edge(pid, aid, 'OWNS_ACCOUNT')
+
+    # Companies
+    for r in mongo.db.get_collection('ref_companies').find({}, {'_id': 0}).limit(limit):
+        cid = r.get('company_id') or r.get('id')
+        cname = r.get('company_name') or r.get('name') or cid
+        if cid:
+            add_node(cid, cname, 'Organization', {'cin': r.get('cin'), 'status': r.get('status'), 'industry': r.get('industry')})
+
+    # Directors — link person → company
+    for r in mongo.db.get_collection('ref_directors').find({}, {'_id': 0}).limit(limit):
+        pid = r.get('person_id')
+        cid = r.get('company_id')
+        role = r.get('role') or 'DIRECTOR_OF'
+        if pid and cid:
+            add_edge(pid, cid, role)
+
+    # Vehicles
+    for r in mongo.db.get_collection('ref_vehicles').find({}, {'_id': 0}).limit(limit):
+        vid = r.get('vehicle_id') or r.get('id')
+        plate = r.get('registration_number') or r.get('plate') or vid
+        pid = r.get('owner_id') or r.get('person_id')
+        if vid:
+            add_node(vid, plate, 'Vehicle', {'make': r.get('make'), 'model': r.get('model'), 'color': r.get('color')})
+        if pid and vid:
+            add_edge(pid, vid, 'OWNS_VEHICLE')
+
+    # Locations — referenced by accounts
+    for r in mongo.db.get_collection('ref_locations').find({}, {'_id': 0}).limit(limit):
+        lid = r.get('location_id') or r.get('id')
+        lname = r.get('name') or r.get('address') or lid
+        if lid:
+            add_node(lid, lname, 'Location', {'lat': r.get('latitude'), 'lon': r.get('longitude'), 'type': r.get('location_type')})
+
+    total_nodes = len(nodes)
+    total_edges = len(edges)
+    return {
+        'nodes': list(nodes.values()),
+        'edges': edges,
+        'stats': {
+            'nodes': total_nodes,
+            'edges': total_edges,
+            'persons': sum(1 for n in nodes.values() if n['type'] == 'Person'),
+            'accounts': sum(1 for n in nodes.values() if n['type'] == 'Account'),
+            'organizations': sum(1 for n in nodes.values() if n['type'] == 'Organization'),
+            'vehicles': sum(1 for n in nodes.values() if n['type'] == 'Vehicle'),
+            'locations': sum(1 for n in nodes.values() if n['type'] == 'Location'),
+        }
+    }

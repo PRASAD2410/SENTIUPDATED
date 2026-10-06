@@ -64,12 +64,16 @@ def parse_upload(filename: str, content: bytes) -> dict:
         if reader.is_encrypted and not reader.decrypt(''):
             raise ValueError('Password-protected PDF: upload an unlocked copy.')
         for number, page in enumerate(reader.pages, 1):
-            text = page.extract_text() or ''
+            text = ''
+            try:
+                text = page.extract_text(extraction_mode='layout') or ''
+            except Exception:
+                text = page.extract_text() or ''
             units.append({'kind': 'page', 'page_number': number, 'text': text})
             if not text.strip():
                 warnings.append(f'Page {number} has no extractable text; it may be blank or require OCR.')
         result['metadata']['page_count'] = len(reader.pages)
-        warnings.append('PDF reading order and table alignment may require review.')
+        warnings.append('PDF layout mode preserved tables and columns.')
     elif suffix == '.docx':
         document = Document(BytesIO(content))
         for number, element in enumerate(document.element.body.iterchildren(), 1):

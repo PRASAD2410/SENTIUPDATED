@@ -20,10 +20,13 @@ export default function InputView({data, current, refresh}) {
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
   const [reanalysisMessage, setReanalysisMessage] = useState('');
+  const [inspectDoc, setInspectDoc] = useState(null);
+  const [inspectLoading, setInspectLoading] = useState(false);
   const picker = useRef(null);
   const pickerSource = useRef(source);
   const pendingCount = pendingUploads(files).length;
   const completedCount = files.filter(file => file.status === 'complete').length;
+  const documents = data?.documents || [];
 
   useEffect(() => {
     try { localStorage.setItem('sg-draft-' + current.id, draft); } catch {}
@@ -42,6 +45,19 @@ export default function InputView({data, current, refresh}) {
     picker.current?.click();
   }
 
+  async function openInspect(doc) {
+    setInspectLoading(true);
+    setError('');
+    try {
+      const details = await api(`/api/cases/${current.id}/documents/${doc.documentId}`);
+      setInspectDoc(details);
+    } catch (failure) {
+      setError(failure.message);
+    } finally {
+      setInspectLoading(false);
+    }
+  }
+
   async function reanalyze(document) {
     setBusy(true);
     setProgress(null);
@@ -50,6 +66,9 @@ export default function InputView({data, current, refresh}) {
     try {
       const response = await api(`/api/cases/${current.id}/documents/${document.documentId}/reanalyze`, {method: 'POST'});
       setReanalysisMessage(`${response.relationshipCount} relationships saved for ${document.filename}. No additional upload was created.`);
+      if (inspectDoc && inspectDoc.document?.documentId === document.documentId) {
+        openInspect(document);
+      }
       refresh();
     } catch (failure) {
       setError(failure.message);
@@ -195,7 +214,7 @@ export default function InputView({data, current, refresh}) {
           <span>{progress.completed ?? progress.index} of {progress.total} files processed{busy && progress.filename ? ' · ' + progress.filename : ''}</span>
         </div>}
       </div>}
-      <p className="muted micro format-hint">PDF · DOCX · CSV · TSV · XLSX · TXT / UP TO 10 MB PER FILE</p>
+      <p className="muted micro format-hint">PDF · DOCX · CSV · TSV · XLSX · TXT / UP TO 1 GB PER FILE</p>
     </section>
 
     {error && <p className="error" role="alert">{error}</p>}
@@ -218,17 +237,86 @@ export default function InputView({data, current, refresh}) {
       </div>)}
     </section>}
 
-    <div className="section-heading"><p className="eyebrow">ATTACHED EVIDENCE</p><h3>Source Records <span className="blue">{data.documents.length}</span></h3></div>
-    {data.documents.length ? <div className="panel source-table">
-      {data.documents.map(document => <div className="source-row" key={document.documentId}>
-        <FileText size={22}/><span><strong>{document.filename}</strong><small>{document.documentId} · {(document.sizeBytes / 1024).toFixed(1)} KB</small>
-          {document.entityCount != null && <small>{document.entityCount} entities · {document.relationshipCount ?? 0} relationships saved</small>}</span>
-        <span className={'status-badge ' + (document.processingStatus === 'completed' && document.relationshipStatus?.complete !== false ? 'green' : 'amber')}>{document.relationshipStatus?.complete === false ? 'Relationships pending' : document.processingStatus}</span>
+    <div className="section-heading"><p className="eyebrow">ATTACHED EVIDENCE</p><h3>Source Records <span className="blue">{documents.length}</span></h3></div>
+    {documents.length ? <div className="panel source-table">
+      {data.documents.map(document => <div className="source-row" key={document.documentId} style={{cursor: 'pointer'}} onClick={(e) => {
+        if (!e.target.closest('button') && !e.target.closest('a')) openInspect(document);
+      }}>
+        <FileText size={22}/>
+        <span style={{flex: 1}}>
+          <strong>{document.filename}</strong>
+          <small>{document.documentId} · {(document.sizeBytes / 1024).toFixed(1)} KB · {document.sourceType || 'Record'}</small>
+          {document.entityCount != null && <small>{document.entityCount} entities · {document.relationshipCount ?? 0} relationships saved</small>}
+        </span>
+        <span className={'status-badge ' + (document.processingStatus === 'completed' && document.relationshipStatus?.complete !== false ? 'green' : 'amber')}>
+          {document.relationshipStatus?.complete === false ? 'Relationships pending' : document.processingStatus}
+        </span>
+        <button disabled={busy} className="icon-button" title="Inspect extracted entities and relationships"
+          aria-label={'Inspect ' + document.filename} onClick={() => openInspect(document)}><FileText size={16}/></button>
         <button disabled={busy || !document.reportId} className="icon-button" title="Reanalyze relationships using current rules"
-          aria-label={'Reanalyze relationships in ' + document.filename} onClick={() => reanalyze(document)}><RefreshCw size={16}/></button>
-        <a className="icon-button" href={`${API}/api/cases/${current.id}/documents/${document.documentId}/download`} aria-label={'Download ' + document.filename}><Download size={16}/></a>
+          aria-label={'Reanalyze relationships in ' + document.filename} onClick={(e) => { e.stopPropagation(); reanalyze(document); }}><RefreshCw size={16}/></button>
+        <a className="icon-button" href={`${API}/api/cases/${current.id}/documents/${document.documentId}/download`}
+          aria-label={'Download ' + document.filename} onClick={e => e.stopPropagation()}><Download size={16}/></a>
       </div>)}
     </div> : <div className="dashed-empty"><Empty title="No source records attached" description="Upload FIRs, transaction records, call logs, or other case material."/></div>}
+
+    {inspectDoc && <Modal title={`Evidence Inspector: ${inspectDoc.document?.filename || 'Document'}`} close={() => setInspectDoc(null)}>
+      <div style={{display: 'flex', flexDirection: 'column', gap: '14px', maxHeight: '70vh', overflowY: 'auto', paddingRight: '4px'}}>
+        <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', background: 'var(--soft)', padding: '12px', borderRadius: '6px', fontSize: '11px'}}>
+          <div><strong>Document ID:</strong><div className="mono" style={{wordBreak: 'break-all'}}>{inspectDoc.document?.documentId}</div></div>
+          <div><strong>SHA-256 Hash:</strong><div className="mono" style={{wordBreak: 'break-all'}}>{inspectDoc.document?.sha256 || 'N/A'}</div></div>
+          <div><strong>Size & Type:</strong><div>{(inspectDoc.document?.sizeBytes / 1024).toFixed(1)} KB · {inspectDoc.document?.contentType}</div></div>
+          <div><strong>Extraction Version:</strong><div className="mono">{inspectDoc.document?.extractionVersion || 'v1'}</div></div>
+        </div>
+
+        <div>
+          <h4 style={{margin: '8px 0 4px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px'}}>
+            <span>Extracted Entities</span>
+            <span className="badge blue" style={{fontSize: '10px'}}>{inspectDoc.entities?.length || 0}</span>
+          </h4>
+          {inspectDoc.entities?.length ? (
+            <div style={{display: 'flex', flexWrap: 'wrap', gap: '6px', maxHeight: '140px', overflowY: 'auto', padding: '6px', background: 'var(--input)', borderRadius: '4px'}}>
+              {inspectDoc.entities.map(ent => (
+                <span key={ent.id} style={{display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 7px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '4px', fontSize: '11px'}}>
+                  <strong className="mono" style={{color: 'var(--blue)', fontSize: '9px'}}>[{ent.type}]</strong>
+                  <span>{ent.label}</span>
+                </span>
+              ))}
+            </div>
+          ) : <p className="small muted">No entities found in this document.</p>}
+        </div>
+
+        <div>
+          <h4 style={{margin: '8px 0 4px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px'}}>
+            <span>Extracted Relationships</span>
+            <span className="badge green" style={{fontSize: '10px'}}>{inspectDoc.relationships?.length || 0}</span>
+          </h4>
+          {inspectDoc.relationships?.length ? (
+            <div style={{display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '180px', overflowY: 'auto'}}>
+              {inspectDoc.relationships.map(rel => (
+                <div key={rel.id || `${rel.source}-${rel.type}-${rel.target}`} style={{padding: '8px', background: 'var(--input)', border: '1px solid var(--border)', borderRadius: '4px', fontSize: '11px'}}>
+                  <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px'}}>
+                    <span><strong>{rel.source}</strong> <span style={{color: 'var(--green)', fontWeight: 'bold'}}>—[{rel.type}]→</span> <strong>{rel.target}</strong></span>
+                    <span className="mono small muted">{rel.confidence ? `conf: ${Math.round(rel.confidence * 100)}%` : ''}</span>
+                  </div>
+                  {rel.evidenceText && <p className="small muted" style={{margin: 0, fontStyle: 'italic'}}>"{rel.evidenceText}"</p>}
+                </div>
+              ))}
+            </div>
+          ) : <p className="small muted">No relationships extracted yet for this document. Click Reanalyze below.</p>}
+        </div>
+
+        <div style={{display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px', borderTop: '1px solid var(--border)', paddingTop: '12px'}}>
+          <button disabled={busy} onClick={() => reanalyze(inspectDoc.document)}>
+            <RefreshCw size={14} className={busy ? 'spin' : ''}/> REANALYZE DOCUMENT
+          </button>
+          <a className="button" href={`${API}/api/cases/${current.id}/documents/${inspectDoc.document?.documentId}/download`}>
+            <Download size={14}/> DOWNLOAD ORIGINAL
+          </a>
+        </div>
+      </div>
+    </Modal>}
+
     {adding && <Modal title="Add Investigation Type" close={() => setAdding(false)}>
       {['Human Trafficking', 'Organized Crime', 'Financial Crime', 'Drug Network'].filter(type => !types.includes(type)).map(type =>
         <button className="modal-option" key={type} onClick={() => {setTypes(existing => [...existing, type]); setSelected(type); setAdding(false);}}>{type}<Plus size={15}/></button>)}

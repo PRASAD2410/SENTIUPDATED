@@ -1,20 +1,18 @@
 {
-    "scripts":  {
-                    "dev":  "vite",
-                    "build":  "vite build",
-                    "preview":  "vite preview",
-                    "start":  "vite"
-                },
-    "dependencies":  {
-                         "@vitejs/plugin-react":  "latest",
-                         "vite":  "latest",
-                         "react":  "latest",
-                         "react-dom":  "latest",
-                         "cytoscape":  "latest",
-                         "react-cytoscapejs":  "latest",
-                         "lucide-react":  "latest"
-                     },
-    "devDependencies":  {
-
-                        }
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "preview": "vite preview",
+        "start": "vite"
+    },
+    "dependencies": {
+        "@vitejs/plugin-react": "latest",
+        "cytoscape": "latest",
+        "d3-force": "^3.0.0",
+        "lucide-react": "latest",
+        "react": "latest",
+        "react-cytoscapejs": "latest",
+        "react-dom": "latest",
+        "vite": "latest"
+    }
 }
