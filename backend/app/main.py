@@ -150,7 +150,10 @@ def case_workspace(case_id:str, min_confidence:float=0.0, layer:str|None=None, t
  for e in rankings:
   if e['connections']<3: continue
   supporting=[r for r in valid if e['id'] in (r['source'],r['target'])]
-  case_leads.append({'severity':'medium','title':f"Reported connections: {e['label']}",'entity':e['label'],'entityId':e['id'],'reason':f"Linked to {e['connections']} distinct entities by extracted source statements. Review the context and alternative explanations.",'rule':'Three or more distinct connections','sources':sorted({r['reportId'] for r in supporting}),'evidence':supporting})
+  sources=sorted({r.get('reportId') or r.get('documentId') or 'Record' for r in supporting})
+  conf=min(0.98, round(0.70 + (e['connections'] * 0.04) + (len(sources) * 0.03), 2))
+  sev='high' if e['connections']>=5 or len(sources)>=2 else 'medium'
+  case_leads.append({'severity':sev,'confidenceScore':conf,'title':f"Reported connections: {e['label']}",'entity':e['label'],'entityId':e['id'],'reason':f"Linked to {e['connections']} distinct entities across {len(sources)} source record(s). Review the context and alternative explanations.",'rule':'Multi-source hub / entity connectivity threshold','sources':sources,'evidence':supporting})
  return {'network':{'nodes':entities,'edges':valid},'documents':documents,'analytics':rankings,'leads':case_leads,
          'overview':{'nodes':len(entities),'edges':len(valid),'reports':len(documents),'leads':len(case_leads)},'truncated':any(len(items)>=1000 for items in (entities,relationships,documents))}
 
